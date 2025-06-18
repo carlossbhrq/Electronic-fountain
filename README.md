@@ -1,4 +1,4 @@
-# 💡 FSM Control for LED-Based Electronic Fountain
+# 💡 FSM Control for Electronic Fountain
 
 This project implements a **Finite State Machine (FSM)** in VHDL to control an electronic fountain or a visual LED-based sequence using the **FPGA Cyclone IV EP4CE22F17C6N**. The FSM is based on a six-instruction processor control block, inspired by *Figure 8.13 from the book by Vahid*.
 
