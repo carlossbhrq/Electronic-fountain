@@ -1,0 +1,117 @@
+--fsm.vhd
+--FSM para o bloco de controle do processador de seis instrucoes (Fig. 8.13 VAHID)
+--Autores: Carlos Henrique Dantas da Costa e Saulo Gabryel Alves de Almeida
+
+--Bibliotecas
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_misc.all;
+use ieee.numeric_std.all;
+
+--Entidade
+entity fsm2 is 
+    port (
+        clk, clr, rf_rp_zero : in std_logic; 
+        op : in std_logic_vector (3 downto 0);
+        led : out std_logic_vector (3 downto 0);
+          clock : out std_logic
+    );
+end fsm2; 
+
+--Arquitetura
+architecture comportamento of fsm2 is
+--Preambulo
+    --Definicao de um novo tipo, denominado estado, que podera assumir os seguintes valores: 
+    --inicio, busca, decodificacao, carregar, armazenar, somar, carregar_constante, subtrair, saltar_se_zero, saltar. 
+    type estado is (inicio, busca, decodificacao, carregar, armazenar, somar, carregar_constante, subtrair, saltar_se_zero, saltar);
+    
+    --Criacao das variaveis de estado atual e estado proximo
+    signal estadoatual, estadoproximo : estado;
+     signal sig_clk : std_logic;
+     signal sig_prescale : std_logic_vector (24 downto 0) := (others => '0');
+     
+begin
+
+    process(clr,clk)
+    begin
+        if clr = '0' then
+            sig_clk <= '0';
+            sig_prescale <= (others => '0');
+        elsif clk'event and clk = '1' then
+            if sig_prescale = "1011111010111100001000000" then -- prescale = 50 MHz/1 Hz/2 = (25x10^6) em binário
+                sig_prescale <= (others => '0');
+                sig_clk <= not sig_clk;
+            else
+                sig_prescale <= sig_prescale + 1;
+            end if;
+        end if;
+    end process;
+    clock <= sig_clk;
+    
+    
+    --Process 1: Registrador de estado, com lista de sensibilidade para sig_clk e clr.
+    registradordeestado : process (sig_clk, clr)
+    begin
+
+        if (clr ='0') then 
+            estadoatual <= inicio;
+        elsif (rising_edge(sig_clk)) then
+            estadoatual <= estadoproximo;
+        end if;
+    end process; 
+
+    --Process 2: Logica combinacional, com lista de sensibilidade para estado atual e rf_rp_zero.
+    logicacombinacional : process (estadoatual, rf_rp_zero)
+    begin
+       case estadoatual is 
+            --Estado ini¬cio
+            when inicio => 
+                estadoproximo <= busca;
+            --Estado busca
+            when busca => 
+                estadoproximo <= decodificacao;
+            --Estado decodificacao 
+            when decodificacao => 
+                if (op = "0000") then 
+                    estadoproximo <= carregar;
+                elsif (op = "0001") then 
+                    estadoproximo <= armazenar;
+                elsif (op = "0010") then 
+                    estadoproximo <= somar;
+                elsif (op = "0011") then 
+                    estadoproximo <= carregar_constante;
+                elsif (op = "0100") then 
+                    estadoproximo <= subtrair;
+                elsif (op = "0101") then
+                    estadoproximo <= saltar_se_zero;
+                end if;
+            --Estado saltar se zero
+            when saltar_se_zero => 
+                if (rf_rp_zero = '0') then 
+                    estadoproximo <= busca;
+                else
+                    estadoproximo <= saltar;
+                end if; 
+            --Estado saltar
+            when saltar => 
+                estadoproximo <= busca;
+            when others => 
+                estadoproximo <= busca;
+        end case;
+    end process;
+
+    --Representando os estados da maquina por meio dos LEDs
+    with estadoatual select
+        led <=  "0000" when inicio,
+                "0001" when busca,
+                "0010" when decodificacao,
+                "0011" when carregar,
+                "0100" when armazenar,
+                "0101" when somar,
+                "0110" when carregar_constante,
+                "0111" when subtrair,
+                "1000" when saltar_se_zero,
+                "1001" when  saltar;
+end comportamento; 
