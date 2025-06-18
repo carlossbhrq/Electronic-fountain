@@ -1,6 +1,6 @@
 --fsm.vhd
 --FSM para o bloco de controle do processador de seis instrucoes (Fig. 8.13 VAHID)
---Autores: Carlos Henrique Dantas da Costa e Saulo Gabryel Alves de Almeida
+--Autor: Carlos Henrique Dantas da Costa
 
 --Bibliotecas
 library ieee;
