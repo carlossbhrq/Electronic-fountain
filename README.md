@@ -1,66 +1,79 @@
-# 💡 FSM Control for Electronic Fountain
+# 💧 Electronic Fountain with FSM Control in VHDL
 
-This project implements a **Finite State Machine (FSM)** in VHDL to control an electronic fountain or a visual LED-based sequence using the **FPGA Cyclone IV EP4CE22F17C6N**. The FSM is based on a six-instruction processor control block, inspired by *Figure 8.13 from the book by Vahid*.
+This project implements an **electronic fountain** using a Finite State Machine (FSM) designed in VHDL. The system simulates a coin-operated fountain, activating LEDs based on an accumulated monetary value. The project is divided into two main components: the **Control Block (PC)** and the **Operational Block (PO)**.
 
-> **Author**: Carlos Henrique Dantas da Costa
-> **File**: `fsm.vhd`  
+> **Author**: Carlos Henrique Dantas da Costa  
 > **Language**: VHDL  
-> **Toolchain**: Quartus, ModelSim
-
-## 📌 Project Overview
-
-The FSM cycles through several operational states—each represented visually using a 4-bit output on LEDs. These states mimic a simple processor instruction set, and the visual behavior (via LEDs) can resemble a programmable LED fountain or indicator system.
-
-## 🚦 State Description
-
-The FSM includes the following states:
-
-| State Name          | LED Output | Description                           |
-|---------------------|------------|---------------------------------------|
-| `inicio`            | `0000`     | Initialization                        |
-| `busca`             | `0001`     | Instruction fetch                     |
-| `decodificacao`     | `0010`     | Instruction decode                    |
-| `carregar`          | `0011`     | Load                                  |
-| `armazenar`         | `0100`     | Store                                 |
-| `somar`             | `0101`     | Add                                   |
-| `carregar_constante`| `0110`     | Load constant                         |
-| `subtrair`          | `0111`     | Subtract                              |
-| `saltar_se_zero`    | `1000`     | Jump if zero                          |
-| `saltar`            | `1001`     | Jump                                  |
-
-## 🧠 Architecture
-
-The FSM operates in two main processes:
-
-1. **Clock Divider**: Reduces the input clock (e.g., 50 MHz) to ~1 Hz using a prescaler, enabling human-visible LED transitions.
-2. **FSM Logic**: Implements the state register and transition logic based on instruction codes (`op`) and a conditional flag (`rf_rp_zero`).
-
-## 🧪 Inputs and Outputs
-
-### Inputs
-- `clk`: Clock signal
-- `clr`: Asynchronous reset (active low)
-- `rf_rp_zero`: Zero flag for conditional branching
-- `op[3:0]`: Operation code input
-
-### Outputs
-- `led[3:0]`: Binary LED output representing current FSM state
-- `clock`: Divided-down output clock (1 Hz)
-
-## 📂 File Summary
-
-- `fsm.vhd`: Main VHDL source file containing entity and architecture of the FSM controller.
-
-## ✅ How to Simulate or Synthesize
-
-1. Open your VHDL tool (Quartus, ModelSim, GHDL, etc.)
-2. Add `fsm.vhd` to your project
-3. Assign FPGA pins for:
-   - `clk`, `clr`, `op`, `rf_rp_zero` (inputs)
-   - `led[3:0]`, `clock` (outputs)
-4. Compile and flash to your board
-5. Observe the LEDs indicating the current FSM state
+> **Recommended tools**: Quartus, ModelSim, FPGA (e.g., Cyclone IV from the DE0-Nano board)
 
 ---
 
-📘 *This FSM-based control logic can be adapted for educational processors, instruction decoders, or visual applications like LED fountains, signaling systems, or sequencers.*
+## 🎯 Objective
+
+Simulate a fountain system that:
+
+- Detects coin insertion (R$0.25, R$0.50, or R$1.00)
+- Accumulates value until **R$1.00** is reached
+- Activates the output (`d`) to turn on the fountain
+- Displays the current FSM state using 3 LEDs
+
+---
+
+## 🧱 System Architecture
+
+The project is composed of three main VHDL files:
+
+### 🔹 `chafariz.vhd` – Top-Level Entity
+
+- Integrates the control block (`PC`) and operational block (`PO`)
+- Implements a **clock prescaler** (divides 50 MHz to ~1 Hz)
+- Handles signal routing between blocks
+
+### 🔹 `PC.vhd` – Control Block (FSM)
+
+FSM with 4 states:
+
+| State       | LEDs  | Description                                   |
+|-------------|--------|-----------------------------------------------|
+| `inicio`     | `001`  | Reset and clear total                        |
+| `espera`     | `010`  | Wait for coin or total check                 |
+| `somar`      | `011`  | Add coin value                               |
+| `fornecer`   | `100`  | Activate output (`d`) and restart process    |
+
+### 🔹 `PO.vhd` – Operational Block
+
+- Decodes coin values based on `dip` input:
+  - `"01"`: R$0.25
+  - `"10"`: R$0.50
+  - `"11"`: R$1.00
+- Accumulates inserted values
+- Compares total against the target (R$1.00)
+- Signals the control block whether the total is sufficient (`tot_lt_s`)
+
+---
+
+## ⚙️ Inputs and Outputs
+
+### 🔌 Inputs
+
+- `clk`: Main clock (50 MHz)
+- `reset`: Asynchronous reset (active-low)
+- `c`: Coin insert trigger
+- `dip[1:0]`: Coin value (via DIP switch)
+
+### 💡 Outputs
+
+- `led[2:0]`: Indicates the current FSM state
+- `d`: Fountain activation signal (HIGH when R$1.00 is reached)
+- `clock`: 1 Hz clock output from prescaler
+
+---
+
+## 📌 Notes
+
+- The prescaler uses the binary constant `1011111010111100001000000` (25,000,000 decimal) to generate a 1 Hz clock from a 50 MHz source.
+- The target value for comparison is `"01100100"` = **100 decimal**, representing **100 cents (R$1.00)**.
+
+---
+
+📘 *This educational project demonstrates FSM design, sequential control, registers, comparators, and modular integration in VHDL.*
