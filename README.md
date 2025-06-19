@@ -4,7 +4,7 @@ This project implements an **electronic fountain** using a Finite State Machine 
 
 > **Author**: Carlos Henrique Dantas da Costa  
 > **Language**: VHDL  
-> **Recommended tools**: Quartus, ModelSim, FPGA (e.g., Cyclone IV from the DE0-Nano board)
+> **Recommended tools**: Quartus II, ModelSim, FPGA (e.g., Cyclone IV from the DE0-Nano board)
 
 ---
 
